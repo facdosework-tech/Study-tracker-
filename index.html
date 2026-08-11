@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- PWA Meta Tags -->
+<link rel="manifest" href="manifest.json">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Study Tracker">
+<link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2997/2997295.png">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#2c3e50">
+    <title>Pro Study Tracker</title>
+    <style>
+        :root {
+            --bg: #eef2f5;
+            --card-bg: #ffffff;
+            --text: #333333;
+            --text-muted: #7f8c8d;
+            --primary: #3498db;
+            --accent: #e74c3c;
+            --success: #2ecc71;
+            --warning: #e67e22;
+            --border: #e2e8f0;
+        }
+
+        body.dark-mode {
+            --bg: #1a202c;
+            --card-bg: #2d3748;
+            --text: #f7fafc;
+            --text-muted: #a0aec0;
+            --primary: #4299e1;
+            --border: #4a5568;
+        }
+
+        * { box-sizing: border-box; transition: background 0.2s, color 0.2s; }
+        body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background-color: var(--bg); color: var(--text); margin: 0; padding: 12px; }
+        .container { max-width: 440px; margin: 0 auto; background: var(--card-bg); border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); overflow: hidden; }
+        
+        .top-header { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; background: #2c3e50; color: white; }
+        .top-header h2 { margin: 0; font-size: 18px; }
+        .theme-btn { background: none; border: none; font-size: 20px; cursor: pointer; color: white; }
+
+        .nav-tabs { display: flex; background: #1a252f; }
+        .tab-btn { flex: 1; padding: 12px 5px; border: none; background: transparent; color: #a0aec0; font-weight: bold; font-size: 13px; cursor: pointer; }
+        .tab-btn.active-tab { color: white; background: #2c3e50; border-bottom: 3px solid var(--primary); }
+
+        .tab-content { padding: 18px; display: none; }
+        .tab-content.active-content { display: block; }
+
+        .target-box { background: var(--bg); padding: 12px; border-radius: 12px; margin-bottom: 15px; }
+        .target-info { display: flex; justify-content: space-between; align-items: center; font-size: 13px; font-weight: bold; margin-bottom: 6px; }
+        .progress-bar-bg { background: var(--border); height: 10px; border-radius: 5px; overflow: hidden; }
+        .progress-bar-fill { background: var(--success); height: 100%; width: 0%; transition: width 0.4s ease; }
+
+        .time-display { font-size: 42px; font-weight: bold; color: var(--accent); text-align: center; margin: 5px 0; font-family: monospace; }
+        .subject-status { text-align: center; font-size: 14px; color: var(--text-muted); margin-bottom: 15px; font-weight: 600; }
+        
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        button { padding: 12px; font-size: 14px; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; }
+        .btn-subject { background-color: var(--primary); color: white; }
+        .btn-subject.active { background-color: var(--success) !important; transform: scale(1.02); }
+        .btn-pause { background-color: var(--warning); color: white; grid-column: span 2; }
+        .btn-action { background-color: var(--border); color: var(--text); padding: 8px 12px; font-size: 12px; border-radius: 6px; }
+        .btn-inline { background-color: var(--primary); color: white; padding: 4px 8px; font-size: 11px; border-radius: 4px; }
+
+        .cal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+        .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; text-align: center; }
+        .day-name { font-weight: bold; font-size: 11px; color: var(--text-muted); padding-bottom: 4px; }
+        .cal-day { font-size: 13px; border-radius: 50%; cursor: pointer; height: 35px; width: 35px; margin: 0 auto; display: flex; align-items: center; justify-content: center; }
+        .cal-day.has-data { background-color: rgba(46, 204, 113, 0.2); color: var(--success); font-weight: bold; }
+        .cal-day.today { border: 2px solid var(--primary); }
+        .cal-day.selected { background-color: var(--primary) !important; color: white !important; }
+
+        .card { margin-top: 15px; padding: 12px; background: var(--bg); border-radius: 12px; }
+        .card h3 { margin: 0 0 10px 0; font-size: 15px; }
+        .subject-row { display: flex; justify-content: space-between; font-size: 13px; margin: 5px 0; border-bottom: 1px dashed var(--border); padding-bottom: 3px; }
+
+        .chart-container { display: flex; align-items: flex-end; justify-content: space-between; height: 130px; padding-top: 20px; margin-top: 10px; }
+        .chart-bar-wrapper { display: flex; flex-direction: column; align-items: center; flex: 1; }
+        .chart-bar { width: 20px; background: var(--primary); border-radius: 4px 4px 0 0; min-height: 4px; }
+        .chart-label { font-size: 10px; color: var(--text-muted); margin-top: 5px; }
+
+        input, select { width: 100%; padding: 8px; border-radius: 6px; border: 1px solid var(--border); background: var(--card-bg); color: var(--text); margin-bottom: 8px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="top-header">
+        <h2>📚 My Study Tracker</h2>
+        <button class="theme-btn" onclick="toggleTheme()" id="themeIcon">🌙</button>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <div class="nav-tabs">
+        <button class="tab-btn active-tab" onclick="switchTab('tracker', this)">⏱ Tracker</button>
+        <button class="tab-btn" onclick="switchTab('calendar', this)">📅 Calendar</button>
+        <button class="tab-btn" onclick="switchTab('analytics', this)">📊 Stats & Backup</button>
+    </div>
+
+    <!-- TAB 1: TRACKER -->
+    <div id="tracker" class="tab-content active-content">
+        <div class="target-box">
+            <div class="target-info">
+                <span id="targetText">Daily Goal: 6h (0%)</span>
+                <button class="btn-inline" onclick="promptChangeTarget()">⚙️ Change Target</button>
+            </div>
+            <div class="progress-bar-bg" style="margin-top: 6px;">
+                <div class="progress-bar-fill" id="progressBar"></div>
+            </div>
+        </div>
+
+        <div class="time-display" id="totalTimeDisplay">00:00:00</div>
+        <div class="subject-status" id="currentSubjectText">Status: Not Studying</div>
+        <div class="time-display" style="font-size: 26px; color: var(--primary);" id="subjectTimeDisplay">00:00:00</div>
+
+        <div class="grid">
+            <button class="btn-subject" id="btn-maths" onclick="startSubject('maths')">Maths</button>
+            <button class="btn-subject" id="btn-gs" onclick="startSubject('gs')">GS</button>
+            <button class="btn-subject" id="btn-english" onclick="startSubject('english')">English</button>
+            <button class="btn-subject" id="btn-reasoning" onclick="startSubject('reasoning')">Reasoning</button>
+            <button class="btn-subject" id="btn-test" onclick="startSubject('test')">Test Section</button>
+            <button class="btn-pause" onclick="pauseTimer()">⏸ Pause All</button>
+        </div>
+
+        <div class="card">
+            <h3>➕ Add Offline Time</h3>
+            <div style="display: flex; gap: 8px;">
+                <select id="manualSubject">
+                    <option value="maths">Maths</option>
+                    <option value="gs">GS</option>
+                    <option value="english">English</option>
+                    <option value="reasoning">Reasoning</option>
+                    <option value="test">Test</option>
+                </select>
+                <input type="number" id="manualMinutes" placeholder="Mins" min="1" style="width: 80px;">
+                <button class="btn-action" onclick="addManualTime()">Add</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 2: CALENDAR -->
+    <div id="calendar" class="tab-content">
+        <div class="cal-header">
+            <button class="btn-action" onclick="changeMonth(-1)">◀</button>
+            <h3 id="monthYearTitle" style="margin: 0; font-size: 15px;"></h3>
+            <button class="btn-action" onclick="changeMonth(1)">▶</button>
+        </div>
+
+        <div class="cal-grid" id="calendarGrid"></div>
+
+        <div class="card" id="recordCard">
+            <h3 id="selectedDateTitle">Select a Date</h3>
+            <div id="recordDetails">Click on any date to see study hours.</div>
+        </div>
+    </div>
+
+    <!-- TAB 3: STATS -->
+    <div id="analytics" class="tab-content">
+        <h3>📊 Last 7 Days Study Hours</h3>
+        <div class="chart-container" id="weeklyChart"></div>
+
+        <div class="card">
+            <h3>⚙️ Target Settings</h3>
+            <label style="font-size: 12px;">Daily Goal (Hours):</label>
+            <div style="display: flex; gap: 8px; margin-top: 4px;">
+                <input type="number" id="targetGoalInput" value="6" min="1" max="24">
+                <button class="btn-action" onclick="saveTargetGoalFromSettings()">Save Goal</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>💾 Data Backup & Restore</h3>
+            <div style="display: flex; gap: 8px;">
+                <button class="btn-action" style="flex:1;" onclick="exportData()">📥 Export Data</button>
+                <button class="btn-action" style="flex:1;" onclick="document.getElementById('importFile').click()">📤 Import Data</button>
+                <input type="file" id="importFile" accept=".json" style="display: none;" onchange="importData(event)">
+            </div>
+            <button class="btn-action" style="width: 100%; margin-top: 10px; background: #e74c3c; color: white;" onclick="resetAllData()">⚠️ Reset App Data</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    function getTodayKey() {
+        const d = new Date();
+        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    }
+
+    function createEmptyDay() {
+        return { total: 0, maths: 0, gs: 0, english: 0, reasoning: 0, test: 0 };
+    }
+
+    let rawData = localStorage.getItem('studyTrackerDB');
+    let db = rawData ? JSON.parse(rawData) : {};
+
+    if (!db.history) db.history = {};
+    if (!db.settings) db.settings = { targetHours: 6, darkMode: false };
+
+    let todayKey = getTodayKey();
+    if (!db.history[todayKey]) db.history[todayKey] = createEmptyDay();
+
+    let activeSubject = null;
+    let timerInterval = null;
+    let currentCalDate = new Date();
+    let selectedDateKey = todayKey;
+
+    function saveData() {
+        localStorage.setItem('studyTrackerDB', JSON.stringify(db));
+    }
+
+    function formatTime(sec) {
+        let h = Math.floor(sec / 3600).toString().padStart(2, '0');
+        let m = Math.floor((sec % 3600) / 60).toString().padStart(2, '0');
+        let s = (sec % 60).toString().padStart(2, '0');
+        return `${h}:${m}:${s}`;
+    }
+
+    function toggleTheme() {
+        db.settings.darkMode = !db.settings.darkMode;
+        applyTheme();
+        saveData();
+    }
+
+    function applyTheme() {
+        if (db.settings.darkMode) {
+            document.body.classList.add('dark-mode');
+            document.getElementById('themeIcon').innerText = '☀️';
+        } else {
+            document.body.classList.remove('dark-mode');
+            document.getElementById('themeIcon').innerText = '🌙';
+        }
+    }
+
+    function switchTab(tabId, btnElement) {
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active-tab'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active-content'));
+        
+        btnElement.classList.add('active-tab');
+        document.getElementById(tabId).classList.add('active-content');
+
+        if(tabId === 'calendar') { renderCalendar(); showRecordForDate(selectedDateKey); }
+        if(tabId === 'analytics') { 
+            renderWeeklyChart(); 
+            document.getElementById('targetGoalInput').value = db.settings.targetHours || 6;
+        }
+    }
+
+    function updateScreen() {
+        let todayData = db.history[todayKey];
+        document.getElementById('totalTimeDisplay').innerText = formatTime(todayData.total);
+        if (activeSubject) {
+            document.getElementById('subjectTimeDisplay').innerText = formatTime(todayData[activeSubject]);
+        } else {
+            document.getElementById('subjectTimeDisplay').innerText = "00:00:00";
+        }
+
+        let targetSec = (db.settings.targetHours || 6) * 3600;
+        let pct = Math.min(100, Math.floor((todayData.total / targetSec) * 100));
+        let studiedHrs = (todayData.total / 3600).toFixed(1);
+        
+        document.getElementById('targetText').innerText = `${studiedHrs}h / ${db.settings.targetHours}h (${pct}%)`;
+        document.getElementById('progressBar').style.width = pct + '%';
+    }
+
+    function promptChangeTarget() {
+        let newHrs = prompt("Enter new daily target study hours:", db.settings.targetHours || 6);
+        if (newHrs !== null) {
+            let parsed = parseInt(newHrs);
+            if (parsed > 0 && parsed <= 24) {
+                db.settings.targetHours = parsed;
+                saveData();
+                updateScreen();
+                alert(`Daily target updated to ${parsed} hours!`);
+            } else {
+                alert("Please enter a valid number between 1 and 24.");
+            }
+        }
+    }
+
+    function saveTargetGoalFromSettings() {
+        let hrs = parseInt(document.getElementById('targetGoalInput').value);
+        if (hrs > 0 && hrs <= 24) {
+            db.settings.targetHours = hrs;
+            saveData();
+            updateScreen();
+            alert("Daily target updated successfully!");
+        } else {
+            alert("Please enter valid hours (1-24).");
+        }
+    }
+
+    function startSubject(subject) {
+        let nowKey = getTodayKey();
+        if (nowKey !== todayKey) {
+            todayKey = nowKey;
+            if (!db.history[todayKey]) db.history[todayKey] = createEmptyDay();
+        }
+
+        if (activeSubject === subject) return;
+
+        activeSubject = subject;
+        document.getElementById('currentSubjectText').innerText = "Studying: " + subject.toUpperCase();
+        document.querySelectorAll('.btn-subject').forEach(b => b.classList.remove('active'));
+        document.getElementById('btn-' + subject).classList.add('active');
+
+        clearInterval(timerInterval);
+        timerInterval = setInterval(() => {
+            db.history[todayKey].total += 1;
+            db.history[todayKey][activeSubject] += 1;
+            saveData();
+            updateScreen();
+        }, 1000);
+
+        updateScreen();
+    }
+
+    function pauseTimer() {
+        clearInterval(timerInterval);
+        activeSubject = null;
+        document.getElementById('currentSubjectText').innerText = "Status: Paused";
+        document.querySelectorAll('.btn-subject').forEach(b => b.classList.remove('active'));
+        updateScreen();
+    }
+
+    function addManualTime() {
+        let sub = document.getElementById('manualSubject').value;
+        let mins = parseInt(document.getElementById('manualMinutes').value);
+        if (mins > 0) {
+            let addSec = mins * 60;
+            db.history[todayKey].total += addSec;
+            db.history[todayKey][sub] += addSec;
+            saveData();
+            updateScreen();
+            document.getElementById('manualMinutes').value = '';
+            alert(`Added ${mins} mins to ${sub.toUpperCase()}`);
+        }
+    }
+
+    function renderCalendar() {
+        const grid = document.getElementById('calendarGrid');
+        grid.innerHTML = '';
+        const year = currentCalDate.getFullYear();
+        const month = currentCalDate.getMonth();
+
+        const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+        document.getElementById('monthYearTitle').innerText = `${monthNames[month]} ${year}`;
+
+        ['S','M','T','W','T','F','S'].forEach(d => {
+            const el = document.createElement('div'); el.className = 'day-name'; el.innerText = d; grid.appendChild(el);
+        });
+
+        const firstDayIndex = new Date(year, month, 1).getDay();
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+        for (let i = 0; i < firstDayIndex; i++) grid.appendChild(document.createElement('div'));
+
+        for (let day = 1; day <= daysInMonth; day++) {
+            const dayEl = document.createElement('div');
+            dayEl.className = 'cal-day';
+            dayEl.innerText = day;
+            const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+
+            if (db.history[dateKey] && db.history[dateKey].total > 0) dayEl.classList.add('has-data');
+            if (dateKey === todayKey) dayEl.classList.add('today');
+            if (dateKey === selectedDateKey) dayEl.classList.add('selected');
+
+            dayEl.onclick = () => { selectedDateKey = dateKey; renderCalendar(); showRecordForDate(dateKey); };
+            grid.appendChild(dayEl);
+        }
+    }
+
+    function changeMonth(dir) { currentCalDate.setMonth(currentCalDate.getMonth() + dir); renderCalendar(); }
+
+    function showRecordForDate(dateKey) {
+        document.getElementById('selectedDateTitle').innerText = `Record for ${dateKey}`;
+        const container = document.getElementById('recordDetails');
+        const dayData = db.history[dateKey];
+
+        if (!dayData || dayData.total === 0) {
+            container.innerHTML = `<p style="color: var(--text-muted); margin: 5px 0;">No study recorded.</p>`;
+            return;
+        }
+
+        container.innerHTML = `
+            <div class="subject-row"><strong>Total:</strong> <strong>${formatTime(dayData.total)}</strong></div>
+            <div class="subject-row"><span>Maths:</span> <span>${formatTime(dayData.maths)}</span></div>
+            <div class="seed-row subject-row"><span>GS:</span> <span>${formatTime(dayData.gs)}</span></div>
+            <div class="subject-row"><span>English:</span> <span>${formatTime(dayData.english)}</span></div>
+            <div class="subject-row"><span>Reasoning:</span> <span>${formatTime(dayData.reasoning)}</span></div>
+            <div class="subject-row"><span>Test:</span> <span>${formatTime(dayData.test)}</span></div>
+        `;
+    }
+
+    function renderWeeklyChart() {
+        const container = document.getElementById('weeklyChart');
+        container.innerHTML = '';
+        
+        let days = [];
+        for(let i=6; i>=0; i--) {
+            let d = new Date();
+            d.setDate(d.getDate() - i);
+            let key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+            let label = d.toLocaleDateString('en-US', { weekday: 'short' });
+            let totalSec = db.history[key] ? db.history[key].total : 0;
+            days.push({ label, totalSec });
+        }
+
+        let maxSec = Math.max(...days.map(d => d.totalSec), 3600);
+
+        days.forEach(day => {
+            let heightPct = Math.max(5, Math.min(100, (day.totalSec / maxSec) * 100));
+            let hrs = (day.totalSec / 3600).toFixed(1);
+
+            let wrapper = document.createElement('div');
+            wrapper.className = 'chart-bar-wrapper';
+            wrapper.innerHTML = `
+                <span style="font-size:9px; color:var(--text-muted);">${hrs}h</span>
+                <div class="chart-bar" style="height:${heightPct}%;"></div>
+                <span class="chart-label">${day.label}</span>
+            `;
+            container.appendChild(wrapper);
+        });
+    }
+
+    function exportData() {
+        let dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(db));
+        let dlAnchor = document.createElement('a');
+        dlAnchor.setAttribute("href", dataStr);
+        dlAnchor.setAttribute("download", `study_backup_${todayKey}.json`);
+        document.body.appendChild(dlAnchor);
+        dlAnchor.click();
+        dlAnchor.remove();
+    }
+
+    function importData(event) {
+        let file = event.target.files[0];
+        if (!file) return;
+        let reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                let importedDB = JSON.parse(e.target.result);
+                if (importedDB.history) {
+                    db = importedDB;
+                    if (!db.settings) db.settings = { targetHours: 6, darkMode: false };
+                    saveData();
+                    applyTheme();
+                    updateScreen();
+                    alert("Data imported successfully!");
+                }
+            } catch(err) {
+                alert("Invalid JSON backup file.");
+            }
+        };
+        reader.readAsText(file);
+    }
+
+    function resetAllData() {
+        if(confirm("Are you sure you want to reset all data?")) {
+            localStorage.removeItem('studyTrackerDB');
+            location.reload();
+        }
+    }
+
+    // Init
+    applyTheme();
+    updateScreen();
+    document.getElementById('targetGoalInput').value = db.settings.targetHours || 6;
+</script>
+</body>
+</html>
