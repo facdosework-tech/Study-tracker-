@@ -345,6 +345,7 @@
     let selectedMode = 'pomo'; 
     let pomoState = 'work';
     let pomoSecondsLeft = 25 * 60;
+    let lastTick = Date.now(); // Timestamp sync anchor
 
     // Audio Context for Ambient Noise Synthesis
     let audioCtx = null;
@@ -367,6 +368,21 @@
         return `${m}:${s}`;
     }
 
+    /* 🔥 VISIBILITY CHANGE LISTENERS (Fixes screen-off timer pause) */
+    document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === 'visible') {
+            if (activeSubject) {
+                let now = Date.now();
+                let delta = Math.floor((now - lastTick) / 1000);
+                if (delta >= 1) {
+                    lastTick = now;
+                    processTick(delta);
+                }
+            }
+            updateScreen();
+        }
+    });
+
     /* 🔥 STREAK CALCULATOR */
     function calculateStreak() {
         let streak = 0;
@@ -380,8 +396,7 @@
                 streak++;
                 d.setDate(d.getDate() - 1);
             } else {
-                // If checking today and total is 0, check yesterday without breaking
-                if (key === todayKey) {
+ if (key === todayKey) {
                     d.setDate(d.getDate() - 1);
                     continue;
                 }
@@ -504,6 +519,43 @@
         document.getElementById('optNormal').classList.toggle('selected', mode === 'normal');
     }
 
+    function processTick(delta) {
+        let nowKey = getTodayKey();
+        if (nowKey !== todayKey) {
+            todayKey = nowKey;
+            if (!db.history[todayKey]) db.history[todayKey] = createEmptyDay();
+        }
+
+        let w = db.settings.pomoWork || 25;
+        let b = db.settings.pomoBreak || 5;
+
+        if (selectedMode === 'normal' || pomoState === 'work') {
+            db.history[todayKey].total += delta;
+            db.history[todayKey][activeSubject] += delta;
+            saveData();
+        }
+
+        if (selectedMode === 'pomo') {
+            pomoSecondsLeft -= delta;
+            if (pomoSecondsLeft <= 0) {
+                playBeepSound();
+                if (pomoState === 'work') {
+                    pomoState = 'break';
+                    pomoSecondsLeft = b * 60;
+                    document.getElementById('pomoBadgeText').className = 'pomo-badge break';
+                    document.getElementById('pomoBadgeText').innerText = `☕ Break Time (${b}m)`;
+                    document.getElementById('currentSubjectText').innerText = `Take a Break! Rest Time.`;
+                } else {
+                    pomoState = 'work';
+                    pomoSecondsLeft = w * 60;
+                    document.getElementById('pomoBadgeText').className = 'pomo-badge';
+                    document.getElementById('pomoBadgeText').innerText = `🍅 Pomodoro Work (${w}m)`;
+                    document.getElementById('currentSubjectText').innerText = `Back to Work: ${activeSubject.toUpperCase()}`;
+                }
+            }
+        }
+    }
+
     function confirmStartSession() {
         if (!pendingSubject) return;
 
@@ -534,40 +586,16 @@
             document.getElementById('currentSubjectText').innerText = `Studying ${activeSubject.toUpperCase()} (Stopwatch)`;
         }
 
+        lastTick = Date.now();
+
         timerInterval = setInterval(() => {
-            let nowKey = getTodayKey();
-            if (nowKey !== todayKey) {
-                todayKey = nowKey;
-                if (!db.history[todayKey]) db.history[todayKey] = createEmptyDay();
+            let now = Date.now();
+            let delta = Math.floor((now - lastTick) / 1000);
+            if (delta >= 1) {
+                lastTick = now;
+                processTick(delta);
+                updateScreen();
             }
-
-            if (selectedMode === 'normal' || pomoState === 'work') {
-                db.history[todayKey].total += 1;
-                db.history[todayKey][activeSubject] += 1;
-                saveData();
-            }
-
-            if (selectedMode === 'pomo') {
-                pomoSecondsLeft--;
-                if (pomoSecondsLeft <= 0) {
-                    playBeepSound();
-                    if (pomoState === 'work') {
-                        pomoState = 'break';
-                        pomoSecondsLeft = b * 60;
-                        document.getElementById('pomoBadgeText').className = 'pomo-badge break';
-                        document.getElementById('pomoBadgeText').innerText = `☕ Break Time (${b}m)`;
-                        document.getElementById('currentSubjectText').innerText = `Take a Break! Rest Time.`;
-                    } else {
-                        pomoState = 'work';
-                        pomoSecondsLeft = w * 60;
-                        document.getElementById('pomoBadgeText').className = 'pomo-badge';
-                        document.getElementById('pomoBadgeText').innerText = `🍅 Pomodoro Work (${w}m)`;
-                        document.getElementById('currentSubjectText').innerText = `Back to Work: ${activeSubject.toUpperCase()}`;
-                    }
-                }
-            }
-
-            updateScreen();
         }, 1000);
 
         updateScreen();
@@ -596,7 +624,7 @@
         }
 
         if (selectedMode === 'pomo' && activeSubject) {
-            document.getElementById('pomoCountdownDisplay').innerText = formatShortTime(pomoSecondsLeft);
+            document.getElementById('pomoCountdownDisplay').innerText = formatShortTime(Math.max(0, pomoSecondsLeft));
         }
 
         let targetSec = (db.settings.targetHours || 6) * 3600;
@@ -624,7 +652,6 @@
             document.getElementById('targetGoalInput').value = db.settings.targetHours || 6;
         }
     }
-
     /* 🍰 DONUT / PIE CHART RENDERER */
     function renderPieChart() {
         const canvas = document.getElementById('pieChartCanvas');
@@ -632,7 +659,7 @@
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
         let t = db.history[todayKey];
-        let total = t.total || 1; // avoid divide by zero
+        let total = t.total || 1; 
 
         let subjects = [
             { name: 'maths', color: '#3498db', val: t.maths },
@@ -668,7 +695,6 @@
             }
         });
 
-        // Inner circle for Donut effect
         ctx.beginPath();
         ctx.arc(centerX, centerY, 40, 0, 2 * Math.PI);
         ctx.fillStyle = getComputedStyle(document.body).getPropertyValue('--card-bg') || '#ffffff';
