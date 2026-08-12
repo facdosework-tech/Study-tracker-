@@ -17,7 +17,7 @@
             --success: #2ecc71;
             --warning: #e67e22;
             --border: #e2e8f0;
-            --pomo: #e74c3c;
+            --streak-grad: linear-gradient(135deg, #ff512f, #dd2476);
         }
 
         body.dark-mode {
@@ -38,11 +38,33 @@
         .theme-btn { background: none; border: none; font-size: 20px; cursor: pointer; color: white; }
 
         .nav-tabs { display: flex; background: #1a252f; }
-        .tab-btn { flex: 1; padding: 12px 5px; border: none; background: transparent; color: #a0aec0; font-weight: bold; font-size: 13px; cursor: pointer; }
+        .tab-btn { flex: 1; padding: 12px 5px; border: none; background: transparent; color: #a0aec0; font-weight: bold; font-size: 12px; cursor: pointer; }
         .tab-btn.active-tab { color: white; background: #2c3e50; border-bottom: 3px solid var(--primary); }
 
-        .tab-content { padding: 18px; display: none; }
+        .tab-content { padding: 16px; display: none; }
         .tab-content.active-content { display: block; }
+
+        /* 🔥 PROMINENT LONG STREAK BANNER */
+        .streak-banner { 
+            background: var(--streak-grad); 
+            color: white; 
+            padding: 14px 18px; 
+            border-radius: 16px; 
+            margin-bottom: 12px; 
+            box-shadow: 0 6px 15px rgba(221, 36, 118, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .streak-info h3 { margin: 0; font-size: 22px; font-weight: 800; letter-spacing: 0.5px; }
+        .streak-info p { margin: 2px 0 0 0; font-size: 11px; opacity: 0.9; font-weight: 600; }
+        .streak-icon { font-size: 38px; animation: pulse 1.5s infinite; }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.12); }
+            100% { transform: scale(1); }
+        }
 
         .target-box { background: var(--bg); padding: 12px; border-radius: 12px; margin-bottom: 12px; }
         .target-info { display: flex; justify-content: space-between; align-items: center; font-size: 13px; font-weight: bold; margin-bottom: 6px; }
@@ -63,6 +85,23 @@
         .btn-pause { background-color: var(--warning); color: white; grid-column: span 2; }
         .btn-action { background-color: var(--border); color: var(--text); padding: 8px 12px; font-size: 12px; border-radius: 6px; }
         .btn-inline { background-color: var(--primary); color: white; padding: 4px 8px; font-size: 11px; border-radius: 4px; }
+
+        /* 🎧 Ambient Focus Audio Buttons */
+        .sound-bar { display: flex; gap: 6px; margin-bottom: 12px; }
+        .btn-sound { flex: 1; padding: 8px; font-size: 11px; border-radius: 8px; background: var(--bg); color: var(--text); border: 1px solid var(--border); }
+        .btn-sound.active { background: var(--primary); color: white; border-color: var(--primary); }
+
+        /* 🏆 Level & Badges Grid */
+        .level-card { background: linear-gradient(135deg, #2c3e50, #3498db); color: white; padding: 12px; border-radius: 12px; margin-bottom: 12px; text-align: center; }
+        .badges-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 8px; }
+        .badge-box { background: var(--card-bg); padding: 8px; border-radius: 8px; text-align: center; border: 1px solid var(--border); opacity: 0.4; }
+        .badge-box.unlocked { opacity: 1; border-color: #f1c40f; box-shadow: 0 2px 8px rgba(241, 196, 15, 0.3); }
+        .badge-icon { font-size: 20px; }
+        .badge-title { font-size: 10px; font-weight: bold; margin-top: 2px; }
+
+        /* Pie Chart Box */
+        .chart-box { text-align: center; padding: 10px; }
+        #pieChartCanvas { max-width: 180px; margin: 0 auto; display: block; }
 
         /* Modal Popup */
         .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); display: none; justify-content: center; align-items: center; z-index: 1000; padding: 20px; }
@@ -87,9 +126,9 @@
         .card h3 { margin: 0 0 10px 0; font-size: 15px; }
         .subject-row { display: flex; justify-content: space-between; font-size: 13px; margin: 5px 0; border-bottom: 1px dashed var(--border); padding-bottom: 3px; }
 
-        .chart-container { display: flex; align-items: flex-end; justify-content: space-between; height: 130px; padding-top: 20px; margin-top: 10px; }
+        .chart-container { display: flex; align-items: flex-end; justify-content: space-between; height: 120px; padding-top: 20px; margin-top: 10px; }
         .chart-bar-wrapper { display: flex; flex-direction: column; align-items: center; flex: 1; }
-        .chart-bar { width: 20px; background: var(--primary); border-radius: 4px 4px 0 0; min-height: 4px; }
+        .chart-bar { width: 18px; background: var(--primary); border-radius: 4px 4px 0 0; min-height: 4px; }
         .chart-label { font-size: 10px; color: var(--text-muted); margin-top: 5px; }
 
         input, select { width: 100%; padding: 8px; border-radius: 6px; border: 1px solid var(--border); background: var(--card-bg); color: var(--text); margin-bottom: 8px; }
@@ -107,20 +146,37 @@
     <div class="nav-tabs">
         <button class="tab-btn active-tab" onclick="switchTab('tracker', this)">⏱ Tracker</button>
         <button class="tab-btn" onclick="switchTab('calendar', this)">📅 Calendar</button>
-        <button class="tab-btn" onclick="switchTab('analytics', this)">📊 Stats & Backup</button>
+        <button class="tab-btn" onclick="switchTab('analytics', this)">📊 Stats & Badges</button>
     </div>
 
     <!-- TAB 1: TRACKER -->
     <div id="tracker" class="tab-content active-content">
+        
+        <!-- 🔥 PROMINENT LONG STREAK BANNER -->
+        <div class="streak-banner">
+            <div class="streak-info">
+                <h3 id="streakText">0 Days Streak</h3>
+                <p id="streakSub">Keep studying daily to build your fire!</p>
+            </div>
+            <div class="streak-icon">🔥</div>
+        </div>
+
         <!-- Daily Goal Target -->
         <div class="target-box">
             <div class="target-info">
                 <span id="targetText">Daily Goal: 6h (0%)</span>
-                <button class="btn-inline" onclick="promptChangeTarget()">⚙️ Target</button>
+                <button class="btn-inline" onclick="promptChangeTarget()">⚙️ Goal</button>
             </div>
             <div class="progress-bar-bg" style="margin-top: 6px;">
                 <div class="progress-bar-fill" id="progressBar"></div>
             </div>
+        </div>
+
+        <!-- 🎧 Focus Audio Controls -->
+        <div class="sound-bar">
+            <button class="btn-sound active" id="sndOff" onclick="toggleSound('off')">🔇 Mute Audio</button>
+            <button class="btn-sound" id="sndRain" onclick="toggleSound('rain')">🌧 Rain Sound</button>
+            <button class="btn-sound" id="sndNoise" onclick="toggleSound('noise')">🌫 White Noise</button>
         </div>
 
         <!-- Timer Displays Box -->
@@ -187,9 +243,30 @@
         </div>
     </div>
 
-    <!-- TAB 3: STATS -->
+    <!-- TAB 3: STATS & BADGES -->
     <div id="analytics" class="tab-content">
-        <h3>📊 Last 7 Days Study Hours</h3>
+        
+        <!-- 🏆 Level Header -->
+        <div class="level-card">
+            <h3 style="margin:0; font-size:16px;" id="userLevelText">Scholar Level 1</h3>
+            <div style="font-size:11px; opacity:0.9; margin-top:3px;" id="userLevelSub">Total Study: 0.0 Hours</div>
+        </div>
+
+        <!-- 🍰 Subject Share Pie Chart -->
+        <div class="card">
+            <h3>🍰 Today's Subject Share</h3>
+            <div class="chart-box">
+                <canvas id="pieChartCanvas" width="180" height="180"></canvas>
+            </div>
+        </div>
+
+        <!-- 🏆 Badges Grid -->
+        <div class="card">
+            <h3>🏆 Achievements & Badges</h3>
+            <div class="badges-grid" id="badgesContainer"></div>
+        </div>
+
+        <h3>📊 Last 7 Days Hours</h3>
         <div class="chart-container" id="weeklyChart"></div>
 
         <div class="card">
@@ -202,10 +279,11 @@
         </div>
 
         <div class="card">
-            <h3>💾 Data Backup & Restore</h3>
+            <h3>💾 Reports & Backup</h3>
+            <button class="btn-action" style="width: 100%; margin-bottom: 8px; background: #2ecc71; color: white;" onclick="downloadCSVReport()">📄 Download CSV Report (Excel)</button>
             <div style="display: flex; gap: 8px;">
-                <button class="btn-action" style="flex:1;" onclick="exportData()">📥 Export Data</button>
-                <button class="btn-action" style="flex:1;" onclick="document.getElementById('importFile').click()">📤 Import Data</button>
+                <button class="btn-action" style="flex:1;" onclick="exportData()">📥 Backup JSON</button>
+                <button class="btn-action" style="flex:1;" onclick="document.getElementById('importFile').click()">📤 Import JSON</button>
                 <input type="file" id="importFile" accept=".json" style="display: none;" onchange="importData(event)">
             </div>
             <button class="btn-action" style="width: 100%; margin-top: 10px; background: #e74c3c; color: white;" onclick="resetAllData()">⚠️ Reset App Data</button>
@@ -254,8 +332,6 @@
 
     if (!db.history) db.history = {};
     if (!db.settings) db.settings = { targetHours: 6, darkMode: false, pomoWork: 25, pomoBreak: 5 };
-    if (!db.settings.pomoWork) db.settings.pomoWork = 25;
-    if (!db.settings.pomoBreak) db.settings.pomoBreak = 5;
 
     let todayKey = getTodayKey();
     if (!db.history[todayKey]) db.history[todayKey] = createEmptyDay();
@@ -265,11 +341,14 @@
     let currentCalDate = new Date();
     let selectedDateKey = todayKey;
 
-    // Session states
     let pendingSubject = null;
-    let selectedMode = 'pomo'; // 'pomo' or 'normal'
-    let pomoState = 'work'; // 'work' or 'break'
+    let selectedMode = 'pomo'; 
+    let pomoState = 'work';
     let pomoSecondsLeft = 25 * 60;
+
+    // Audio Context for Ambient Noise Synthesis
+    let audioCtx = null;
+    let currentNoiseNode = null;
 
     function saveData() {
         localStorage.setItem('studyTrackerDB', JSON.stringify(db));
@@ -286,6 +365,92 @@
         let m = Math.floor(sec / 60).toString().padStart(2, '0');
         let s = (sec % 60).toString().padStart(2, '0');
         return `${m}:${s}`;
+    }
+
+    /* 🔥 STREAK CALCULATOR */
+    function calculateStreak() {
+        let streak = 0;
+        let d = new Date();
+        
+        while (true) {
+            let key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+            let dayData = db.history[key];
+            
+            if (dayData && dayData.total > 0) {
+                streak++;
+                d.setDate(d.getDate() - 1);
+            } else {
+                // If checking today and total is 0, check yesterday without breaking
+                if (key === todayKey) {
+                    d.setDate(d.getDate() - 1);
+                    continue;
+                }
+                break;
+            }
+        }
+        return streak;
+    }
+
+    function updateStreakDisplay() {
+        let streak = calculateStreak();
+        document.getElementById('streakText').innerText = `${streak} ${streak === 1 ? 'Day' : 'Days'} Streak`;
+        if (streak === 0) {
+            document.getElementById('streakSub').innerText = "Start a session today to light your fire!";
+        } else if (streak < 5) {
+            document.getElementById('streakSub').innerText = "Great momentum! Keep studying daily!";
+        } else {
+            document.getElementById('streakSub').innerText = "🔥 Unstoppable Fire! You are on a roll!";
+        }
+    }
+
+    /* 🎧 AMBIENT FOCUS AUDIO SYNTHESIZER */
+    function toggleSound(type) {
+        document.querySelectorAll('.btn-sound').forEach(b => b.classList.remove('active'));
+        
+        if (currentNoiseNode) {
+            currentNoiseNode.stop();
+            currentNoiseNode = null;
+        }
+
+        if (type === 'off') {
+            document.getElementById('sndOff').classList.add('active');
+            return;
+        }
+
+        document.getElementById(type === 'rain' ? 'sndRain' : 'sndNoise').classList.add('active');
+
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        
+        let bufferSize = audioCtx.sampleRate * 2;
+        let buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+        let output = buffer.getChannelData(0);
+
+        for (let i = 0; i < bufferSize; i++) {
+            output[i] = Math.random() * 2 - 1;
+        }
+
+        let whiteNoise = audioCtx.createBufferSource();
+        whiteNoise.buffer = buffer;
+        whiteNoise.loop = true;
+
+        let filter = audioCtx.createBiquadFilter();
+        if (type === 'rain') {
+            filter.type = 'lowpass';
+            filter.frequency.value = 800;
+        } else {
+            filter.type = 'bandpass';
+            filter.frequency.value = 1000;
+        }
+
+        let gain = audioCtx.createGain();
+        gain.gain.value = 0.12;
+
+        whiteNoise.connect(filter);
+        filter.connect(gain);
+        gain.connect(audioCtx.destination);
+
+        whiteNoise.start();
+        currentNoiseNode = whiteNoise;
     }
 
     function playBeepSound() {
@@ -319,7 +484,6 @@
         }
     }
 
-    // Modal behavior
     function openSubjectModal(subject) {
         pendingSubject = subject;
         document.getElementById('modalSubjectTitle').innerText = `Start ${subject.toUpperCase()}`;
@@ -363,7 +527,7 @@
             document.getElementById('pomoBadgeText').className = 'pomo-badge';
             document.getElementById('pomoBadgeText').innerText = `🍅 Pomodoro Work (${w}m)`;
             document.getElementById('pomoCountdownContainer').style.display = 'block';
-            document.getElementById('currentSubjectText').innerText = `Studying ${activeSubject.toUpperCase()} in Pomodoro Mode`;
+            document.getElementById('currentSubjectText').innerText = `Studying ${activeSubject.toUpperCase()} (Pomodoro)`;
         } else {
             document.getElementById('pomoBadgeBox').style.display = 'none';
             document.getElementById('pomoCountdownContainer').style.display = 'none';
@@ -441,6 +605,8 @@
 
         document.getElementById('targetText').innerText = `${studiedHrs}h / ${db.settings.targetHours}h (${pct}%)`;
         document.getElementById('progressBar').style.width = pct + '%';
+
+        updateStreakDisplay();
     }
 
     function switchTab(tabId, btnElement) {
@@ -453,8 +619,127 @@
         if(tabId === 'calendar') { renderCalendar(); showRecordForDate(selectedDateKey); }
         if(tabId === 'analytics') { 
             renderWeeklyChart(); 
+            renderPieChart();
+            renderBadgesAndLevel();
             document.getElementById('targetGoalInput').value = db.settings.targetHours || 6;
         }
+    }
+
+    /* 🍰 DONUT / PIE CHART RENDERER */
+    function renderPieChart() {
+        const canvas = document.getElementById('pieChartCanvas');
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        let t = db.history[todayKey];
+        let total = t.total || 1; // avoid divide by zero
+
+        let subjects = [
+            { name: 'maths', color: '#3498db', val: t.maths },
+            { name: 'gs', color: '#2ecc71', val: t.gs },
+            { name: 'english', color: '#e67e22', val: t.english },
+            { name: 'reasoning', color: '#9b59b6', val: t.reasoning },
+            { name: 'test', color: '#f1c40f', val: t.test }
+        ];
+
+        let startAngle = 0;
+        let centerX = canvas.width / 2;
+        let centerY = canvas.height / 2;
+        let radius = 75;
+
+        if (t.total === 0) {
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
+            ctx.fillStyle = '#e2e8f0';
+            ctx.fill();
+            return;
+        }
+
+        subjects.forEach(sub => {
+            if (sub.val > 0) {
+                let sliceAngle = (sub.val / total) * 2 * Math.PI;
+                ctx.beginPath();
+                ctx.moveTo(centerX, centerY);
+                ctx.arc(centerX, centerY, radius, startAngle, startAngle + sliceAngle);
+                ctx.closePath();
+                ctx.fillStyle = sub.color;
+                ctx.fill();
+                startAngle += sliceAngle;
+            }
+        });
+
+        // Inner circle for Donut effect
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, 40, 0, 2 * Math.PI);
+        ctx.fillStyle = getComputedStyle(document.body).getPropertyValue('--card-bg') || '#ffffff';
+        ctx.fill();
+    }
+
+    /* 🏆 LEVEL & BADGES RENDERER */
+    function renderBadgesAndLevel() {
+        let grandTotalSec = 0;
+        let mathsSec = 0;
+
+        Object.values(db.history).forEach(day => {
+            grandTotalSec += day.total || 0;
+            mathsSec += day.maths || 0;
+        });
+
+        let totalHours = (grandTotalSec / 3600).toFixed(1);
+        let level = Math.floor(totalHours / 10) + 1;
+        let streak = calculateStreak();
+
+        document.getElementById('userLevelText').innerText = `🎓 Scholar Level ${level}`;
+        document.getElementById('userLevelSub').innerText = `Total Lifetime Study: ${totalHours} Hours`;
+
+        let badges = [
+            { title: 'Bronze Scholar', icon: '🥉', unlocked: totalHours >= 10 },
+            { title: 'Silver Titan', icon: '🥈', unlocked: totalHours >= 50 },
+            { title: 'Gold Master', icon: '🥇', unlocked: totalHours >= 100 },
+            { title: 'Streak Starter', icon: '🔥', unlocked: streak >= 3 },
+            { title: 'Streak King', icon: '⚡', unlocked: streak >= 7 },
+            { title: 'Maths Wizard', icon: '📐', unlocked: (mathsSec / 3600) >= 20 }
+        ];
+
+        let container = document.getElementById('badgesContainer');
+        container.innerHTML = '';
+
+        badges.forEach(b => {
+            let box = document.createElement('div');
+            box.className = `badge-box ${b.unlocked ? 'unlocked' : ''}`;
+            box.innerHTML = `
+                <div class="badge-icon">${b.icon}</div>
+                <div class="badge-title">${b.title}</div>
+            `;
+            container.appendChild(box);
+        });
+    }
+
+    /* 📄 DOWNLOAD EXCEL / CSV REPORT */
+    function downloadCSVReport() {
+        let csvContent = "data:text/csv;charset=utf-8,Date,Total Study (Mins),Maths (Mins),GS (Mins),English (Mins),Reasoning (Mins),Test (Mins)\n";
+
+        Object.keys(db.history).sort().forEach(dateKey => {
+            let d = db.history[dateKey];
+            let row = [
+                dateKey,
+                Math.round(d.total / 60),
+                Math.round(d.maths / 60),
+                Math.round(d.gs / 60),
+                Math.round(d.english / 60),
+                Math.round(d.reasoning / 60),
+                Math.round(d.test / 60)
+            ].join(",");
+            csvContent += row + "\n";
+        });
+
+        let encodedUri = encodeURI(csvContent);
+        let link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", `study_report_${todayKey}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
     }
 
     function promptChangeTarget() {
