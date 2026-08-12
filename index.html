@@ -269,9 +269,8 @@
             <button class="btn-action" style="width: 100%; margin-top: 10px; background: #e74c3c; color: white;" onclick="resetAllData()">⚠️ Reset App</button>
         </div>
     </div>
-</div>
-
-<!-- Modal Popup -->
+    </div>
+    <!-- Modal Popup -->
 <div class="modal-overlay" id="subjectModal">
     <div class="modal-card">
         <h3 id="modalSubjectTitle">Start</h3>
@@ -405,7 +404,7 @@
         db.history[todayKey].todos.splice(index, 1); saveData(); renderTodos();
     }
 
-    // Visibility & Timer Sync
+    // Visibility & Timer Sync (The Doze Mode Fix)
     document.addEventListener("visibilitychange", () => {
         if (document.visibilityState === 'visible') {
             if (activeSubject) { let delta = Math.floor((Date.now() - lastTick) / 1000); if (delta >= 1) { lastTick = Date.now(); processTick(delta); } }
@@ -439,8 +438,9 @@
                 }
             }
         }
+    }
 
-        function confirmStartSession() {
+    function confirmStartSession() {
         if (!pendingSubject) return;
         db.settings.pomoWork = parseInt(document.getElementById('modalPomoWork').value) || 25;
         db.settings.pomoBreak = parseInt(document.getElementById('modalPomoBreak').value) || 5;
@@ -561,6 +561,7 @@
         }
     }
     function changeMonth(dir) { currentCalDate.setMonth(currentCalDate.getMonth() + dir); renderCalendar(); }
+    
     function showRecordForDate(k) {
         document.getElementById('selectedDateTitle').innerText = `Record for ${k}`;
         let d = db.history[k];
@@ -572,6 +573,7 @@
         });
         document.getElementById('recordDetails').innerHTML = html;
     }
+    
     function renderWeeklyChart() {
         const c = document.getElementById('weeklyChart'); c.innerHTML = '';
         let max = 3600; let days = [];
@@ -618,17 +620,114 @@
         } catch(e) { alert("❌ Cloud Error: " + e.message); }
         btn.innerText = originalText; btn.disabled = false;
     }
+    // 🎧 Audio System (100% complete)
+    function toggleSound(type) {
+        document.querySelectorAll('.btn-sound').forEach(b => b.classList.remove('active'));
+        if (currentNoiseNode) { currentNoiseNode.stop(); currentNoiseNode = null; }
+        if (type === 'off') { document.getElementById('sndOff').classList.add('active'); return; }
+        
+        document.getElementById(type === 'rain' ? 'sndRain' : 'sndNoise').classList.add('active');
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        
+        let bufferSize = audioCtx.sampleRate * 2;
+        let buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+        let output = buffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) output[i] = Math.random() * 2 - 1;
+        
+        let whiteNoise = audioCtx.createBufferSource();
+        whiteNoise.buffer = buffer; whiteNoise.loop = true;
+        
+        let filter = audioCtx.createBiquadFilter();
+        if (type === 'rain') { filter.type = 'lowpass'; filter.frequency.value = 800; }
+        else { filter.type = 'bandpass'; filter.frequency.value = 1000; }
+        
+        let gain = audioCtx.createGain(); gain.gain.value = 0.12;
+        
+        whiteNoise.connect(filter); filter.connect(gain); gain.connect(audioCtx.destination);
+        whiteNoise.start(); currentNoiseNode = whiteNoise;
+    }
 
-    // Audio, Helpers, Exports...
-    function toggleSound(type) { /* ... same audio logic ... */ }
-    function playBeepSound() { try{let ctx=new(window.AudioContext||window.webkitAudioContext)();let osc=ctx.createOscillator();let g=ctx.createGain();osc.connect(g);g.connect(ctx.destination);osc.frequency.value=587.33;g.gain.value=0.3;osc.start();osc.stop(ctx.currentTime+0.8);}catch(e){} }
-    function saveTargetGoalFromSettings() { db.settings.targetHours=parseInt(document.getElementById('targetGoalInput').value)||6; saveData(); updateScreen(); alert("Goal updated!"); }
-    function addManualTime() { let sub=document.getElementById('manualSubject').value; let mins=parseInt(document.getElementById('manualMinutes').value); if(mins>0) { let s=mins*60; db.history[todayKey].total+=s; db.history[todayKey][sub]=(db.history[todayKey][sub]||0)+s; saveData(); updateScreen(); document.getElementById('manualMinutes').value=''; alert("Time added!"); } }
+    function playBeepSound() { 
+        try {
+            let ctx = new(window.AudioContext||window.webkitAudioContext)();
+            let osc = ctx.createOscillator(); let g = ctx.createGain();
+            osc.connect(g); g.connect(ctx.destination);
+            osc.frequency.value = 587.33; g.gain.value = 0.3;
+            osc.start(); osc.stop(ctx.currentTime + 0.8);
+        } catch(e){} 
+    }
+
+    function saveTargetGoalFromSettings() { 
+        let hrs = parseInt(document.getElementById('targetGoalInput').value) || 6; 
+        if(hrs > 0 && hrs <= 24) { db.settings.targetHours = hrs; saveData(); updateScreen(); alert("Goal updated!"); }
+    }
     
-    // Init
+    function addManualTime() { 
+        let sub = document.getElementById('manualSubject').value; 
+        let mins = parseInt(document.getElementById('manualMinutes').value); 
+        if(mins > 0) { 
+            let s = mins * 60; 
+            db.history[todayKey].total += s; 
+            db.history[todayKey][sub] = (db.history[todayKey][sub] || 0) + s; 
+            saveData(); updateScreen(); 
+            document.getElementById('manualMinutes').value = ''; alert("Time added!"); 
+        } 
+    }
+
+    // 💾 Backup and Reset System (100% complete)
+    function exportData() {
+        let dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(db));
+        let dlAnchor = document.createElement('a');
+        dlAnchor.setAttribute("href", dataStr);
+        dlAnchor.setAttribute("download", `study_backup_${todayKey}.json`);
+        document.body.appendChild(dlAnchor); dlAnchor.click(); dlAnchor.remove();
+    }
+
+    function importData(event) {
+        let file = event.target.files[0]; if (!file) return;
+        let reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                let importedDB = JSON.parse(e.target.result);
+                if (importedDB.history) {
+                    db = importedDB; saveData(); applyTheme(); updateScreen(); renderSubjects(); renderTodos();
+                    alert("Data imported successfully!");
+                } else { alert("Invalid Backup File"); }
+            } catch(err) { alert("Invalid JSON backup file."); }
+        };
+        reader.readAsText(file);
+    }
+
+    function downloadCSVReport() {
+        let subjectsHeader = db.settings.subjects.map(s => `${s.toUpperCase()} (Mins)`).join(",");
+        let csvContent = `data:text/csv;charset=utf-8,Date,Total Study (Mins),${subjectsHeader}\n`;
+
+        Object.keys(db.history).sort().forEach(dateKey => {
+            let d = db.history[dateKey];
+            let row = [dateKey, Math.round(d.total / 60)];
+            db.settings.subjects.forEach(sub => {
+                row.push(Math.round((d[sub] || 0) / 60));
+            });
+            csvContent += row.join(",") + "\n";
+        });
+
+        let encodedUri = encodeURI(csvContent);
+        let link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", `study_report_${todayKey}.csv`);
+        document.body.appendChild(link); link.click(); link.remove();
+    }
+
+    function resetAllData() {
+        if(confirm("Are you sure you want to reset ALL app data? This cannot be undone!")) {
+            localStorage.removeItem('studyTrackerDB');
+            location.reload();
+        }
+    }
+    
+    // Init Application
     applyTheme(); renderSubjects(); renderTodos(); updateScreen();
 </script>
 </body>
 </html>
-    }
     
